@@ -1,5 +1,5 @@
 # formgenerator
-simple form generator for Machine Learning model training data
+Simple form generator for Machine Learning model training data.
 
 # Build
 
