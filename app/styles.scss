@@ -19,4 +19,8 @@ form{
   width: 240px;
   background: $global-muted-background;
   padding: 5px;
+
+  .uk-button{
+    text-transform: lowercase;
+  }
 }

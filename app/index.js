@@ -82,7 +82,7 @@ function addRandomElement(form){
  * @param {string} filename 
  */
 function takeScreenshot1(filename){
-  return domtoimage.toJpeg(document.body.firstChild, {quality:0.8}).then(function(dataUrl){
+  return domtoimage.toJpeg(document.getElementById('form').firstChild, {quality:0.8}).then(function(dataUrl){
     var link = document.createElement('a');
     link.download = filename + '.jpeg';
     link.href = dataUrl;
@@ -96,7 +96,7 @@ function takeScreenshot1(filename){
  * @param {string} filename 
  */
 function takeScreenshot2(filename){
-  return html2canvas(document.body.firstChild, {
+  return html2canvas(document.getElementById('form').firstChild, {
     foreignObjectRendering: false,
     logging: false
   }).then(function(canvas){
@@ -109,8 +109,9 @@ function takeScreenshot2(filename){
 }
 
 function clearBody(){
-  while(document.body.firstChild){
-    document.body.removeChild(document.body.firstChild);
+  var form = document.getElementById('form');
+  while(form.firstChild){
+    form.removeChild(form.firstChild);
   }
 }
 
@@ -124,8 +125,9 @@ function generateForm(elementCount, iterationCount, json){
     addRandomElement(form);
     totalElements--;
   }
-  document.body.appendChild(form);
-  json[iterationCount] = document.body.innerHTML
+  var $form = document.getElementById('form');
+  $form.appendChild(form);
+  json[iterationCount] = $form.innerHTML
   takeScreenshot2(iterationCount).then(function(){
     generateForm(elementCount, iterationCount - 1, json)
   });
@@ -139,12 +141,14 @@ function downloadJSON(json){
   a.click();
 }
 
-window.onload = function(){
-  var json = {};
-  generateForm(5, 1, json);
-  downloadJSON(json);
-  
+window.onload = function () {
+  document.getElementById('formGenerator').addEventListener('submit', (e)=>{
+    e.preventDefault();
+    var elementCount = document.getElementById('elementCount').value || 5;
+    var formCount = document.getElementById('formCount').value || 1;
+    
+    var json = {};
+    generateForm(elementCount, formCount, json);
+    downloadJSON(json);
+  })  
 }
-
-
-
