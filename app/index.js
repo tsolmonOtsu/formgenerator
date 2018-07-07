@@ -35,7 +35,16 @@ function createLabel(labelText){
   return label;
 }
 
-function addInputElement(type, value, label, form){
+function addInputElement(type, value, label, form, tokens){
+  tokens.push(dom2TokenMap['<div>']);
+  tokens.push(dom2TokenMap['<label>']);
+  tokens.push(...text2Tokens(label));
+  tokens.push(dom2TokenMap['</label>']);
+  tokens.push(dom2TokenMap['<' + type+'>']);
+  tokens.push(...text2Tokens(value));
+  tokens.push(dom2TokenMap['</' + type+'>']);
+  tokens.push(dom2TokenMap['</div>']);
+
   var row = createElement('div', 'uk-margin-small');
   var label = createLabel(label);
   var container = createElement('div', 'uk-form-controls');
@@ -51,7 +60,11 @@ function addInputElement(type, value, label, form){
   form.appendChild(row);
 }
 
-function addButton(buttonText, form){
+function addButton(buttonText, form, tokens){
+  tokens.push(dom2TokenMap['<button>']);
+  tokens.push(...text2Tokens(buttonText));
+  tokens.push(dom2TokenMap['</button>']);
+
   var text = document.createTextNode(buttonText);
   var row = createElement('div', 'uk-margin');
   var button = createElement('button', 'uk-button uk-button-small');
@@ -60,21 +73,57 @@ function addButton(buttonText, form){
   form.appendChild(row);
 }
 
-function addHr(form){
+function addHr(form, tokens){
+  tokens.push(dom2TokenMap['<hr>']);
   form.appendChild(document.createElement('hr'));
 }
 
 var elements = [
-  function(form){addInputElement('text', randomText(), randomText(), form);},
-  function(form){addInputElement('number', randomNumber(), randomText(), form);},
-  function(form){addInputElement('password', randomText(), randomText(), form);},
-  function(form){addHr(form);},
-  function(form){addButton(randomText(), form);}
-]
+  function(form, tokens){addInputElement('text', randomText(), randomText(), form, tokens);},
+  function(form, tokens){addInputElement('number', randomNumber(), randomText(), form, tokens);},
+  function(form, tokens){addInputElement('password', randomText(), randomText(), form, tokens);},
+  function(form, tokens){addHr(form, tokens);},
+  function(form, tokens){addButton(randomText(), form, tokens);}
+];
 
-function addRandomElement(form){
+var dom2TokenMap = {
+  '<form>' : 36,
+  '</form>' : 37,
+  '<div>' : 38,
+  '</div>' : 39,
+  '<label>' : 40,
+  '</label>' : 41,
+  '<text>' : 42,
+  '</text>' : 43,
+  '<number>' : 44,
+  '</number>' : 45,
+  '<password>' : 46,
+  '</password>' : 47,
+  '<button>' : 48,
+  '</button>' : 49,
+  '<hr>' : 50,
+}
+
+function text2Tokens(text){
+  text= text.trim();
+  var tokens = [];
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    if(char.trim() === ''){
+      tokens.push(51);
+    }else if(char>=0 && char<=9) {
+      tokens.push(parseInt(char));
+    }else if(char>='a' && char<='z'){
+      var letter = char.charCodeAt(0) - 'a'.charCodeAt(0) + 10;
+      tokens.push(letter);
+    }
+  }
+  return tokens;
+}
+
+function addRandomElement(form, tokens){
   var index = parseInt(Math.random() * 100) % elements.length;
-  elements[index](form);
+  elements[index](form, tokens);
 }
 
 /**
@@ -141,20 +190,24 @@ function generateForm(elementCount, iterationCount, json, data){
     var duration = new Date().getTime() - start;
     console.log(duration)
     downloadJSON(json);
+    downloadJSONbin(json);
     downloadData(data);
+
     return;
   }
   
   clearBody();
+  var tokens = [dom2TokenMap['<form>']];
   var form = createElement('form', 'uk-form-stacked');
   var totalElements = elementCount;
   while (totalElements) {
-    addRandomElement(form);
+    addRandomElement(form, tokens);
     totalElements--;
   }
+  tokens.push(dom2TokenMap['</form>']);
   var $form = document.getElementById('form');
   $form.appendChild(form);
-  json[iterationCount] = $form.innerHTML
+  json[iterationCount] = tokens
 
   $form.firstChild.style.height = (66*elementCount) +"px";
   takeScreenshot2(iterationCount, data, form).then(function(){
@@ -169,6 +222,22 @@ function downloadJSON(json){
   a.download = 'data.json';
   a.click();
 }
+
+function downloadJSONbin(json){
+  
+  var concatenatedTokens = [];
+  var length = Object.keys(json);
+  for(var i=1; i<=length; i++){
+    concatenatedTokens.push(...json[i]);
+  }
+  var array = new Uint8Array(concatenatedTokens);
+  var blob = new Blob([array], {type: "octet/stream"}),
+      url = window.URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url;
+  a.download = "data.bin";
+  a.click();
+  window.URL.revokeObjectURL(url);}
 
 function downloadData(data){
   var a = document.createElement("a");
