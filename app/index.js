@@ -98,21 +98,31 @@ function takeScreenshot1(filename){
 function takeScreenshot2(filename, data){
   return html2canvas(document.getElementById('form').firstChild, {
     foreignObjectRendering: false,
-    logging: false
+    logging: false,
   }).then(function(canvas){
-    
     var ctx = canvas.getContext('2d');
-    var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    var offset = (parseInt(filename) - 1) * canvas.width * canvas.height;
-    for (let i = 0, j=0; i < imageData.length; i+=4, j++) {
-      data[offset+j] = imageData[i];
+    ctx.scale(scaleFactor, scaleFactor);
+    ctx.drawImage(canvas, 0, 0);
+
+    var smallCanvas = document.createElement('canvas');   
+    smallCanvas.width = canvas.width*scaleFactor;
+    smallCanvas.height = canvas.height*scaleFactor; 
+    ctx = smallCanvas.getContext('2d');
+    ctx.drawImage(canvas, 0, 0);
+
+    var imageData = ctx.getImageData(0, 0, smallCanvas.width, smallCanvas.height);
+    var offset = (parseInt(filename) - 1) * smallCanvas.width * smallCanvas.height;
+    for (let i = 0, j=0; i < imageData.data.length; i+=4, j++) {
+      data[offset+j] = imageData.data[i];
+      // console.log(imageData.data[i] + ' ' + imageData.data[i+1] + ' ' + imageData.data[i+2])
     }    
     
+    // ctx.putImageData(imageData, 0, 0);
     // var link = document.createElement('a');
     // link.download = filename + '.jpeg';
-    // link.href = canvas.toDataURL('image/jpeg', 0.8);
+    // link.href = smallCanvas.toDataURL('image/jpeg', 0.8);
     // link.click();
-    // return;
+    return;
   })
 }
 
@@ -124,7 +134,12 @@ function clearBody(){
 }
 
 function generateForm(elementCount, iterationCount, json, data){
-  if(!iterationCount) return;
+  console.log(iterationCount)
+  if(!iterationCount) {
+    downloadJSON(json);
+    downloadData(data);
+    return;
+  }
   
   clearBody();
   var form = createElement('form', 'uk-form-stacked');
@@ -137,7 +152,6 @@ function generateForm(elementCount, iterationCount, json, data){
   $form.appendChild(form);
   json[iterationCount] = $form.innerHTML
   $form.firstChild.style.height = (66*elementCount) +"px";
-  
   takeScreenshot2(iterationCount, data).then(function(){
     generateForm(elementCount, iterationCount - 1, json, data)
   });
@@ -162,6 +176,7 @@ function downloadData(data){
 }
 
 
+var scaleFactor = .8;
 
 window.onload = function () {
   document.getElementById('formGenerator').addEventListener('submit', (e)=>{
@@ -170,13 +185,12 @@ window.onload = function () {
     var formCount = parseInt(document.getElementById('formCount').value) || 1;
     
     var json = {};
-    var length = (66*elementCount + 10)*120;
+    var length = (66*elementCount + 10)*120*formCount*scaleFactor*scaleFactor;
     var data = new Uint8Array(length);
     console.log(length);
 
     
     generateForm(elementCount, formCount, json, data);
-    downloadJSON(json);
-    downloadData(data);
+    
   })  
 }
