@@ -226,7 +226,7 @@ function downloadJSON(json){
 function downloadJSONbin(json){
   
   var concatenatedTokens = [];
-  var length = Object.keys(json);
+  var length = Object.keys(json).length;
   for(var i=1; i<=length; i++){
     concatenatedTokens.push(...json[i]);
   }
