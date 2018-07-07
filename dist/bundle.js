@@ -141,7 +141,7 @@
 	 * Takes screenshot using html2canvas
 	 * @param {string} filename 
 	 */
-	function takeScreenshot2(filename, data){
+	function takeScreenshot2(filename, data, form){
 	  return html2canvas(document.getElementById('form').firstChild, {
 	    foreignObjectRendering: false,
 	    logging: false,
@@ -180,8 +180,12 @@
 	}
 
 	function generateForm(elementCount, iterationCount, json, data){
-	  console.log(iterationCount)
+	  if(iterationCount%10 == 0){
+	    console.log(iterationCount)
+	  }
 	  if(!iterationCount) {
+	    var duration = new Date().getTime() - start;
+	    console.log(duration)
 	    downloadJSON(json);
 	    downloadData(data);
 	    return;
@@ -197,8 +201,9 @@
 	  var $form = document.getElementById('form');
 	  $form.appendChild(form);
 	  json[iterationCount] = $form.innerHTML
+
 	  $form.firstChild.style.height = (66*elementCount) +"px";
-	  takeScreenshot2(iterationCount, data).then(function(){
+	  takeScreenshot2(iterationCount, data, form).then(function(){
 	    generateForm(elementCount, iterationCount - 1, json, data)
 	  });
 	}
@@ -213,7 +218,7 @@
 
 	function downloadData(data){
 	  var a = document.createElement("a");
-	  var blob = new Blob(data, {type: "octet/stream"}),
+	  var blob = new Blob([data], {type: "octet/stream"}),
 	      url = window.URL.createObjectURL(blob);
 	  a.href = url;
 	  a.download = "image.bin";
@@ -223,6 +228,7 @@
 
 
 	var scaleFactor = .8;
+	var start= null;
 
 	window.onload = function () {
 	  document.getElementById('formGenerator').addEventListener('submit', (e)=>{
@@ -235,7 +241,7 @@
 	    var data = new Uint8Array(length);
 	    console.log(length);
 
-	    
+	    start = new Date().getTime();
 	    generateForm(elementCount, formCount, json, data);
 	    
 	  })  
